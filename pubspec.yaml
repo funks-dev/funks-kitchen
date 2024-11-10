@@ -1,0 +1,97 @@
+name: Funks_Kitchen
+description: "A Flutter Project Funks Kitchen"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_svg: ^1.0.3
+  font_awesome_flutter: ^10.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+# The following section is specific to Flutter packages.
+flutter:
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    # Starting Page
+    - assets/images/funks_kitchen_home.png
+
+    # Header
+    - assets/images/funks_logo_header.png
+
+    # Home Page
+    - assets/images/slide1.png
+    - assets/images/slide2.png
+    - assets/images/slide3.png
+    - assets/images/news1.png
+    - assets/images/news2.png
+    - assets/images/news3.png
+    - assets/images/news4.png
+
+    # About Us
+    - assets/images/about_us.png
+
+    # Menu Page & Home Page
+    - assets/images/strawberry_smoothies.png
+    - assets/images/kiwi_smoothies.png
+    - assets/images/watermelon_smoothies.png
+    - assets/images/pineapple_smoothies.png
+    - assets/images/milk_coffee.png
+    - assets/images/chocolatte.png
+    - assets/images/matchalatte.png
+    - assets/images/lemontea.png
+    - assets/images/limesquash.png
+    - assets/images/limeice.png
+    - assets/images/lychee_ice.png
+    - assets/images/strawberry_squash.png
+    - assets/images/strawberry_lime_moctail.png
+    - assets/images/blueberry_mojito_squash.png
+    - assets/images/lemon_ice_with_lime.png
+    - assets/images/dalgona_coffee.png
+    - assets/images/ice_cream_latte_milk.png
+    - assets/images/dcold_brew_latte.png
+    - assets/images/milkshake_chocolate_with_whipped_cream.png
+    - assets/images/iced_americano_with_orange_and_lemon_juice.png
+    - assets/images/spicy_funkedup_pasta.png
+    - assets/images/funky_noodle.png
+    - assets/images/funky_fried_rice.png
+    - assets/images/funky_bbq_ribs.png
+    - assets/images/funky_rice_bowl_chicken.png
+    - assets/images/funky_rice_bowl_katsu.png
+    - assets/images/funky_chicken_sandwitch.png
+    - assets/images/funky_rice_bowl_teriyaki.png
+    - assets/images/steak_eggs.png
+    - assets/images/szechuan_chicken.png
+    - assets/images/funky_korean_bbq_beef_bowl.png
+    - assets/images/butter_chicken.png
+    - assets/images/beef_chow_mein.png
+    - assets/images/black_pepper_beef.png
+    - assets/images/chicken_mushroom_claypot.png
+    - assets/images/fuyunghai.png
+    - assets/images/funky_capcay.png
+    - assets/images/noodle_chili_oil.png
+    - assets/images/egg_rice.png
+    - assets/images/pangsit_chili_oil.png
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter_18pt-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Inter_24pt-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter_18pt-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter_18pt-Regular.ttf
+          weight: 400
