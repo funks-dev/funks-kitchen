@@ -73,7 +73,13 @@ class PopularPage extends StatelessWidget {
               },
             ),
           ),
-          const Footer(),
+          CustomBottomNavigation(
+            selectedIndex: 0, // Default index
+            onItemTapped: (index) {
+              // Handle item tap logic if needed
+            },
+            isBackgroundVisible: false,  // Set background visibility to false
+          ),
         ],
       ),
     );

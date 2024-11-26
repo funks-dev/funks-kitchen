@@ -7,7 +7,12 @@ class DetailPage extends StatelessWidget {
   final String imageUrl;
   final String description;
 
-  const DetailPage({super.key, required this.title, required this.imageUrl, required this.description});
+  const DetailPage({
+    super.key,
+    required this.title,
+    required this.imageUrl,
+    required this.description,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,6 +20,7 @@ class DetailPage extends StatelessWidget {
       appBar: const Header(),
       body: Column(
         children: [
+          // Title Section
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
@@ -23,15 +29,20 @@ class DetailPage extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
+          // Image Section
           Container(
             width: 282,
             height: 230,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              image: DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover),
+              image: DecorationImage(
+                image: NetworkImage(imageUrl),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           const SizedBox(height: 16),
+          // Description Section
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
@@ -40,8 +51,19 @@ class DetailPage extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Add Spacer to push the footer to the bottom
           const Spacer(),
-          const Footer(),
+
+          // Sticky Bottom Navigation with no background
+          CustomBottomNavigation(
+            selectedIndex: 0, // Default index
+            onItemTapped: (index) {
+              // Handle item tap logic if needed
+            },
+            isBackgroundVisible: false,  // Set background visibility to false
+          ),
         ],
       ),
     );

@@ -1,87 +1,136 @@
+import 'package:Funks_Kitchen/pages/profile_page.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../pages/home_page.dart';
+import '../pages/menu_page.dart';
+import '../pages/profile_page.dart';
 
-class Footer extends StatelessWidget {
-  const Footer({super.key});
+class CustomBottomNavigation extends StatefulWidget {
+  final int selectedIndex; // To pass the selected index to this widget
+  final ValueChanged<int> onItemTapped; // Callback to update the selected index
+  final bool isBackgroundVisible; // Flag to toggle footer background visibility
 
+  const CustomBottomNavigation({
+    super.key,
+    required this.selectedIndex,
+    required this.onItemTapped,
+    required this.isBackgroundVisible, // Accept the background visibility flag
+  });
+
+  @override
+  _CustomBottomNavigationState createState() => _CustomBottomNavigationState();
+}
+
+class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 150,
-      color: const Color(0xFFDA1E1E),
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 10.0),
+      height: 60, // Reduced height
+      margin: const EdgeInsets.only(bottom: 0),
+      decoration: BoxDecoration(
+        color: widget.isBackgroundVisible ? const Color(0xFFDA1E1E) : Colors.transparent, // Red background visibility
+        boxShadow: widget.isBackgroundVisible
+            ? [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ]
+            : [],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildNavItem(
+            icon: Icons.home,
+            index: 0,
+            text: 'Home',
+            onTap: () {
+              widget.onItemTapped(0);
+              _navigateToPage(const HomePage());
+            },
+          ),
+          _buildNavItem(
+            icon: Icons.restaurant,
+            index: 1,
+            text: 'Menu',
+            onTap: () {
+              widget.onItemTapped(1);
+              _navigateToPage(
+                const MenuPage(initialIsFoodSelected: true),
+              );
+            },
+          ),
+          _buildNavItem(
+            icon: Icons.shopping_cart,
+            index: 2,
+            text: 'Cart',
+            onTap: () {
+              // Logic for shopping cart page can be added here
+            },
+          ),
+          _buildNavItem(
+            icon: Icons.person,
+            index: 3,
+            text: 'Profile',
+            onTap: () {
+              widget.onItemTapped(3);
+              _navigateToPage(
+                const ProfilePage(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required int index,
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    bool isSelected = widget.selectedIndex == index;
+    return GestureDetector(
+      onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                'assets/images/funks_logo_header.png',
-                height: 40,
-                width: 50,
-              ),
-              const SizedBox(width: 6),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "FUNKS",
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white,
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.start,
-                  ),
-                  Text(
-                    "KITCHEN",
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white,
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.start,
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 8,),
-          const Text(
-            "Kota Malang, Jawa Timur 65145, Telpon 0087860368942",
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.white,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w600,
+          // Icon Container
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
             ),
-            textAlign: TextAlign.justify,
+            child: Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.white70,
+              size: 20,
+            ),
           ),
-          const SizedBox(height: 8),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.facebook, size: 19, color: Colors.white),
-              SizedBox(width: 10),
-              FaIcon(FontAwesomeIcons.instagram, size: 19, color: Colors.white),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            "© 2024 Funks Kitchen",
+          // Text Below Icon
+          Text(
+            text,
             style: TextStyle(
+              color: isSelected ? Colors.white : Colors.white70,
               fontSize: 10,
-              color: Colors.white,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // Function to navigate to a page directly, replacing the current one
+  void _navigateToPage(Widget page) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => page),  // Navigating directly
     );
   }
 }

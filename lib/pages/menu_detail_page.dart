@@ -62,7 +62,6 @@ class MenuDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 150),
-            const Footer(),
           ],
         ),
       ),

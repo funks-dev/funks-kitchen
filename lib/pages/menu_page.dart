@@ -16,6 +16,13 @@ class MenuPage extends StatefulWidget {
 
 class _MenuPageState extends State<MenuPage> {
   late bool isFoodSelected;
+  int _selectedIndex = 1;  // Start from Menu tab since this is the Menu page
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   void initState() {
@@ -287,129 +294,139 @@ class _MenuPageState extends State<MenuPage> {
     return Scaffold(
       appBar: const Header(),
       drawer: const Sidebar(),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16.0),
-                  child: Center(
-                    child: Text(
-                      'Menu',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                Container(
-                  width: 114,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFABABAB),
-                    borderRadius: BorderRadius.circular(60),
-                  ),
-                  child: Row(
+      body: Column(
+        children: [
+          // Content of the page
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _buildMenuIcon(
-                          icon: Icons.fastfood,
-                          isSelected: isFoodSelected,
-                          onTap: () {
-                            setState(() {
-                              isFoodSelected = true;
-                            });
-                          },
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.0),
+                        child: Center(
+                          child: Text(
+                            'Menu',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
-                      Expanded(
-                        child: _buildMenuIcon(
-                          icon: Icons.local_drink,
-                          isSelected: !isFoodSelected,
-                          onTap: () {
-                            setState(() {
-                              isFoodSelected = false;
-                            });
-                          },
+                      Container(
+                        width: 114,
+                        height: 45,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFABABAB),
+                          borderRadius: BorderRadius.circular(60),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildMenuIcon(
+                                icon: Icons.fastfood,
+                                isSelected: isFoodSelected,
+                                onTap: () {
+                                  setState(() {
+                                    isFoodSelected = true;
+                                  });
+                                },
+                              ),
+                            ),
+                            Expanded(
+                              child: _buildMenuIcon(
+                                icon: Icons.local_drink,
+                                isSelected: !isFoodSelected,
+                                onTap: () {
+                                  setState(() {
+                                    isFoodSelected = false;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      const SizedBox(height: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            isFoodSelected ? 'FOODS' : 'DRINKS',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      isFoodSelected ? 'FOODS' : 'DRINKS',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w600,
-                      ),
+                SliverPadding(
+                  padding: const EdgeInsets.all(16.0),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: isFoodSelected ? 82 / 130 : 74 / 142,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                        final menuItem = items[index];
+                        return GestureDetector(
+                          onTap: () => _openMenuDetail(menuItem),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  image: DecorationImage(
+                                    image: AssetImage(menuItem.imageUrl),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                height: isFoodSelected ? 100 : 110,
+                                width: double.infinity,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                menuItem.name,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 7,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      childCount: items.length,
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
               ],
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16.0),
-            sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: isFoodSelected ? 82 / 130 : 74 / 142,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  final menuItem = items[index];
-                  return GestureDetector(
-                    onTap: () => _openMenuDetail(menuItem),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            image: DecorationImage(
-                              image: AssetImage(menuItem.imageUrl),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          height: isFoodSelected ? 100 : 110,
-                          width: double.infinity,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          menuItem.name,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 7,
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                childCount: items.length,
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(
-            child: Footer(),
-          ),
         ],
       ),
+      bottomNavigationBar: CustomBottomNavigation(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
+        isBackgroundVisible: true,  // Background is visible on MenuPage
+      ),
     );
+
   }
 
   Widget _buildMenuIcon({

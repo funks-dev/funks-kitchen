@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../components/header.dart';
-import '../components/footer.dart';
 import '../components/sidebar.dart';
+import '../components/footer.dart';
 
 class NewsPage extends StatelessWidget {
   const NewsPage({super.key});
@@ -34,56 +34,60 @@ class NewsPage extends StatelessWidget {
     return Scaffold(
       appBar: const Header(),
       drawer: const Sidebar(),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  const Center(
-                    child: Text(
-                      'News',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w600,
+      body: Stack(  // Use Stack to overlay bottom navigation on top of content
+        children: [
+          // Main content
+          SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 16),
+                      const Center(
+                        child: Text(
+                          'News',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Popular',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: newsItems.length,
+                        itemBuilder: (context, index) {
+                          final item = newsItems[index];
+                          return _buildNewsCard(
+                            imageUrl: item['imageUrl']!,
+                            title: item['title']!,
+                            date: item['date']!,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 150),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Popular',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: newsItems.length,
-                    itemBuilder: (context, index) {
-                      final item = newsItems[index];
-                      return _buildNewsCard(
-                        imageUrl: item['imageUrl']!,
-                        title: item['title']!,
-                        date: item['date']!,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
+                ),
+              ],
             ),
-            const Footer(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
