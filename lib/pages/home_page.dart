@@ -3,7 +3,6 @@ import '../components/header.dart';
 import '../components/card_item.dart';
 import '../components/footer.dart';
 import '../components/sidebar.dart';
-import '../components/popular_item.dart';
 import '../models/menu_item.dart';
 import 'menu_detail_page.dart';
 import 'news_page.dart';
@@ -18,6 +17,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  int _selectedIndex = 0;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   final List<Map<String, String>> newsItems = [
     {
@@ -178,8 +184,9 @@ class _HomePageState extends State<HomePage> {
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 117, // Tinggi tetap
+          height: 117, // Height fixed
           child: ListView.builder(
+            shrinkWrap: true,
             scrollDirection: Axis.horizontal,
             itemCount: items.length,
             itemBuilder: (context, index) {
@@ -195,20 +202,20 @@ class _HomePageState extends State<HomePage> {
                 child: Container(
                   margin: EdgeInsets.only(
                     left: index == 0 ? 8 : 0,
-                    right: 4,
+                    right: 8, // Adjusted right margin
                   ),
                   child: Stack(
                     children: [
-                      // Rectangle background with rounded corners
+                      // Background rectangle with rounded corners
                       Container(
-                        width: 82, // Lebar tetap seperti semula
-                        height: 117, // Tinggi tetap seperti semula
+                        width: 82,
+                        height: 117,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD9D9D9), // Warna background
+                          color: const Color(0xFFD9D9D9),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      // Gambar ditumpuk di atas rectangle
+                      // Image inside the rectangle
                       Positioned.fill(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
@@ -267,6 +274,7 @@ class _HomePageState extends State<HomePage> {
         SizedBox(
           height: 210,
           child: ListView.builder(
+            shrinkWrap: true,
             scrollDirection: Axis.horizontal,
             itemCount: newsItems.length,
             itemBuilder: (context, index) {
@@ -294,61 +302,50 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: const Header(),
       drawer: const Sidebar(),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Stack(
-                          alignment: Alignment.bottomCenter,
-                          children: [
-                            SizedBox(
-                              height: 150,
-                              width: double.infinity,
-                              child: PageView(
-                                controller: _pageController,
-                                onPageChanged: (index) {
-                                  setState(() {
-                                    _currentPage = index;
-                                  });
-                                },
-                                children: [
-                                  Image.asset('assets/images/slide1.png', fit: BoxFit.cover),
-                                  Image.asset('assets/images/slide2.png', fit: BoxFit.cover),
-                                  Image.asset('assets/images/slide3.png', fit: BoxFit.cover),
-                                ],
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 8,
-                              child: _buildPageIndicator(),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        _buildNewsSection(),
-                        const SizedBox(height: 12),
-                        _buildPopularSection('Popular Foods', popularFoods),
-                        const SizedBox(height: 12),
-                        _buildPopularSection('Popular Drinks', popularDrinks),
-                        const SizedBox(height: 50),
-                        const Footer(),
-                      ],
-                    ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Full-width PageView
+            Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                SizedBox(
+                  height: 150,
+                  width: double.infinity,  // Full width
+                  child: PageView(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPage = index;
+                      });
+                    },
+                    children: [
+                      Image.asset('assets/images/slide1.png', fit: BoxFit.cover),
+                      Image.asset('assets/images/slide2.png', fit: BoxFit.cover),
+                      Image.asset('assets/images/slide3.png', fit: BoxFit.cover),
+                    ],
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+                Positioned(
+                  bottom: 8,
+                  child: _buildPageIndicator(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildNewsSection(),
+            const SizedBox(height: 12),
+            _buildPopularSection('Popular Foods', popularFoods),
+            const SizedBox(height: 12),
+            _buildPopularSection('Popular Drinks', popularDrinks),
+            const SizedBox(height: 50),
+          ],
+        ),
+      ),
+      bottomNavigationBar: CustomBottomNavigation(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
+        isBackgroundVisible: true,
       ),
     );
   }

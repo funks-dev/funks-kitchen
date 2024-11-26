@@ -35,7 +35,7 @@ class _StartingPageState extends State<StartingPage> {
               width: 364,
             ),
             const Text(
-              'FUNKS.KITCHEN',
+              'FunksKitchen',
               style: TextStyle(
                 fontSize: 30,
                 color: Colors.white,

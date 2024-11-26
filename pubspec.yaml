@@ -84,6 +84,9 @@ flutter:
     - assets/images/egg_rice.png
     - assets/images/pangsit_chili_oil.png
 
+    # Profile
+    - assets/images/profile.png
+
   fonts:
     - family: Inter
       fonts:
