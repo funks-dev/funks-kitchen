@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../components/header.dart';
-import '../components/footer.dart';
 import '../models/menu_item.dart';
 
 class MenuDetailPage extends StatelessWidget {

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Sidebar extends StatelessWidget {
   const Sidebar({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final User? user = Supabase.instance.client.auth.currentUser;  // Check current user
+
     return Drawer(
       child: Column(
         children: [
@@ -93,25 +96,35 @@ class Sidebar extends StatelessWidget {
           ),
           // Divider before the Sign In section
           const Divider(),
-          // Sign In section at the very bottom with icon and left-aligned text
+          // Dynamic Sign In / Log Out section at the very bottom
           Padding(
             padding: const EdgeInsets.all(16.0),  // Add padding around the text
             child: GestureDetector(
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                Navigator.pushNamed(context, '/signin_page',);
+              onTap: () async {
+                if (user == null) {
+                  Navigator.pop(context); // Close the drawer
+                  Navigator.pushNamed(context, '/signin_page'); // Navigate to Sign In page
+                } else {
+                  await Supabase.instance.client.auth.signOut(); // Log out the user
+                  Navigator.pop(context); // Close the drawer
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/home_page',
+                        (route) => false, // Remove all previous routes
+                  );
+                }
               },
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,  // Align the row to the start (left)
                 children: [
                   Icon(
-                    Icons.login,  // Icon representing sign-in (you can use any icon)
-                    color: Color(0xFFDA1E1E),  // Red icon
+                    user == null ? Icons.login : Icons.logout,  // Change icon based on login status
+                    color: const Color(0xFFDA1E1E),  // Red icon
                   ),
-                  SizedBox(width: 10),  // Add space between the icon and the text
+                  const SizedBox(width: 10),  // Add space between the icon and the text
                   Text(
-                    'Sign In',
-                    style: TextStyle(
+                    user == null ? 'Sign In' : 'Log Out',  // Display either Sign In or Log Out based on user status
+                    style: const TextStyle(
                       fontSize: 20,
                       color: Colors.black,  // Black text
                       fontFamily: 'Inter',

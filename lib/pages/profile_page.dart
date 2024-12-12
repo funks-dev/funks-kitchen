@@ -1,7 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../components/header.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:shimmer/shimmer.dart';
+
 import '../components/footer.dart';
+import '../components/header.dart';
 import '../components/sidebar.dart';
+import 'edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,9 +17,61 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final PageController _pageController = PageController();
-  final int _currentPage = 0;
-  int _selectedIndex = 3;
+  late int _selectedIndex = 3;
+  bool isLoading = true;
+  String? fullName;
+  String? email;
+  String? mobileNumber;
+  String? _profileImageBase64;
+
+  final SupabaseClient _supabase = Supabase.instance.client;
+
+  Future<void> _fetchUserData() async {
+    setState(() => isLoading = true);
+
+    // Menambahkan delay buatan untuk menampilkan efek shimmer
+    await Future.delayed(const Duration(seconds: 2));
+
+    try {
+      final User? user = _supabase.auth.currentUser;
+      if (user != null) {
+        final response = await _supabase
+            .from('users') // Assuming 'users' is your table in Supabase
+            .select('full_name, email, mobile_number, profile_image')
+            .eq('id', user.id)
+            .single();
+
+        if (response != null) {
+          setState(() {
+            fullName = response['full_name'];
+            email = user.email;
+            mobileNumber = response['mobile_number'];
+            _profileImageBase64 = response['profile_image'];
+            isLoading = false;
+          });
+        } else {
+          setState(() => isLoading = false);
+        }
+      } else {
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching user data: $e");
+      }
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _refreshProfile() async {
+    await _fetchUserData();
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -21,28 +79,75 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  Widget _buildPageIndicator() {
+  // Shimmer untuk profile section
+  Widget _buildLoadingProfileSection() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (index) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _currentPage == index ? Colors.black : Colors.grey,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Profile image shimmer
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            width: 72,
+            height: 72,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
           ),
-        );
-      }),
+        ),
+        const SizedBox(width: 16),
+        // Profile info shimmer
+        Expanded(
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 150,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 120,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 100,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const IconButton(
+          icon: Icon(Icons.settings, color: Colors.grey),
+          onPressed: null,
+        ),
+      ],
     );
   }
 
-  // Reusable Widget for Profile Options with Icons and Text
   Widget _buildProfileOption(IconData icon, String text) {
     return InkWell(
       onTap: () {
-        // Handle onTap event for each option (e.g., navigate to a different page)
+        // Handle onTap event
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -54,12 +159,37 @@ class _ProfilePageState extends State<ProfilePage> {
               text,
               style: const TextStyle(
                 fontSize: 16,
+                fontFamily: 'Inter',
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileImage() {
+    ImageProvider imageProvider;
+
+    if (_profileImageBase64 != null && _profileImageBase64!.isNotEmpty) {
+      try {
+        final imageBytes = base64Decode(_profileImageBase64!);
+        imageProvider = MemoryImage(imageBytes);
+      } catch (e) {
+        if (kDebugMode) {
+          print("Error decoding base64 image: $e");
+        }
+        imageProvider = const AssetImage('assets/images/profile.png');
+      }
+    } else {
+      imageProvider = const AssetImage('assets/images/profile.png');
+    }
+
+    return CircleAvatar(
+      radius: 36,
+      backgroundImage: imageProvider,
+      backgroundColor: Colors.grey[300],
     );
   }
 
@@ -73,7 +203,6 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Title
             const Text(
               'Profile',
               style: TextStyle(
@@ -84,73 +213,70 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 16),
 
-            // Profile Picture and Info
-            Row(
+            // Profile section dengan conditional shimmer
+            isLoading ? _buildLoadingProfileSection() : Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Profile Picture
-                CircleAvatar(
-                  radius: 36,
-                  backgroundImage: const AssetImage('assets/images/profile.png'), // replace with your asset path
-                  backgroundColor: Colors.grey[300],
-                ),
+                _buildProfileImage(),
                 const SizedBox(width: 16),
-
-                // User Info
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Budiono Siregar',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fullName ?? "Gaada Nama lu kocak",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'budiono.siregar55@gmail.com',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey,
+                      const SizedBox(height: 4),
+                      Text(
+                        email ?? "Gimana bisa email lu gaada cuk",
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontFamily: 'Inter',
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '+62 8561 1111 0099',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey,
+                      const SizedBox(height: 4),
+                      Text(
+                        mobileNumber ?? "Halo nomor wa mu berapa hehe",
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontFamily: 'Inter',
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-
-                // Settings Icon
-                const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.settings),
-                  onPressed: () {
-                    // Add functionality for updating profile
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const EditProfilePage()),
+                    );
+                    _refreshProfile();
                   },
                 ),
               ],
             ),
             const SizedBox(height: 20),
-
-            // Divider line
             const Divider(),
             const SizedBox(height: 10),
 
-            // Activity, Review, and Wishlist Section
-            _buildProfileOption(Icons.history, 'Aktivitas'),
-            _buildProfileOption(Icons.rate_review, 'Ulasan'),
+            // Menu options tanpa shimmer
+            _buildProfileOption(Icons.location_on_outlined, 'Location'),
+            _buildProfileOption(Icons.history, 'Activity'),
+            _buildProfileOption(Icons.rate_review_outlined, 'Review'),
+            _buildProfileOption(Icons.shopping_cart_outlined, 'Cart'),
             _buildProfileOption(Icons.favorite_border, 'Wishlist'),
             const Divider(),
             const SizedBox(height: 10),
-
-            // Complaint Orders Section
-            _buildProfileOption(Icons.report_problem, 'Pesanan Dikomplain'),
+            _buildProfileOption(Icons.report_gmailerrorred_outlined, 'Pesanan Dikomplain'),
           ],
         ),
       ),
@@ -160,11 +286,5 @@ class _ProfilePageState extends State<ProfilePage> {
         isBackgroundVisible: true,
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
   }
 }

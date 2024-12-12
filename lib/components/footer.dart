@@ -2,7 +2,6 @@ import 'package:Funks_Kitchen/pages/profile_page.dart';
 import 'package:flutter/material.dart';
 import '../pages/home_page.dart';
 import '../pages/menu_page.dart';
-import '../pages/profile_page.dart';
 
 class CustomBottomNavigation extends StatefulWidget {
   final int selectedIndex; // To pass the selected index to this widget
@@ -64,9 +63,9 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
             },
           ),
           _buildNavItem(
-            icon: Icons.shopping_cart,
+            icon: Icons.receipt_rounded,
             index: 2,
-            text: 'Cart',
+            text: 'Order',
             onTap: () {
               // Logic for shopping cart page can be added here
             },

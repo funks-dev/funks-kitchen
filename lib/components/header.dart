@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
 import '../pages/home_page.dart';
 
-class Header extends StatelessWidget implements PreferredSizeWidget {
+class Header extends StatefulWidget implements PreferredSizeWidget {
   final bool isBackButton;
 
   const Header({super.key, this.isBackButton = false});
 
   @override
+  State<Header> createState() => _HeaderState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(60);
+}
+
+class _HeaderState extends State<Header> {
+  @override
   Widget build(BuildContext context) {
     return AppBar(
       leading: IconButton(
         icon: Icon(
-          isBackButton ? Icons.arrow_back : Icons.menu,
+          widget.isBackButton ? Icons.arrow_back : Icons.menu,
           color: Colors.white,
         ),
         onPressed: () {
-          if (isBackButton) {
+          if (widget.isBackButton) {
             Navigator.of(context).pop();
           } else {
             Scaffold.of(context).openDrawer();
@@ -40,7 +48,4 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(60);
 }

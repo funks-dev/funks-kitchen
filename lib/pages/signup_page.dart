@@ -1,14 +1,162 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/auth_service.dart';
 
-class SignUpPage extends StatelessWidget {
+class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
+
+  @override
+  _SignUpPageState createState() => _SignUpPageState();
+}
+
+class _SignUpPageState extends State<SignUpPage> {
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _mobileNumberController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  final _authService = AuthService();
+  bool _isLoading = false;
+
+  bool _isPasswordVisible = false; // For toggling password visibility
+  bool _isConfirmPasswordVisible = false; // For toggling confirm password visibility
+
+  bool isValidEmail(String email) {
+    final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegExp.hasMatch(email);
+  }
+
+  void _signUp() async {
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
+    String confirmPassword = _confirmPasswordController.text.trim();
+    String fullName = _fullNameController.text.trim();
+    String mobileNumber = _mobileNumberController.text.trim();
+
+    // Validasi dasar
+    if (email.isEmpty || password.isEmpty || fullName.isEmpty || mobileNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Isi form nya woy jangan dikosongin.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validasi format email
+    if (!isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Woy masukin email yang valid kocak.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validasi password match
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Hayolo password nya ga sama kocak.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _authService.register(
+        email: email,
+        password: password,
+        fullName: fullName,
+        mobileNumber: mobileNumber,
+      );
+
+      // Clear the text fields
+      _fullNameController.clear();
+      _emailController.clear();
+      _mobileNumberController.clear();
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mantap Bos berhasil register anda! Sekarang waktunya login Mobile Legend.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to sign in page after successful registration
+        Navigator.pushReplacementNamed(context, '/signin_page');
+      }
+    } on AuthException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } on PostgrestException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Database error: ${error.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unexpected error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _signUpWithGoogle() async {
+    try {
+      await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'io.supabase.flutterquickstart://login-callback/',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error signing in with Google: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: false, // Disable extend body behind the AppBar
-      body: SingleChildScrollView(  // Wrap everything in a SingleChildScrollView
+      extendBodyBehindAppBar: false,
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -16,7 +164,7 @@ class SignUpPage extends StatelessWidget {
             children: [
               // Logo
               Image.asset(
-                'assets/images/funks_logo_header.png',  // Update with your actual image path
+                'assets/images/funks_logo_header.png',
                 width: 145,
                 height: 158,
               ),
@@ -34,19 +182,10 @@ class SignUpPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Email Address Field
-              const TextField(
-                decoration: InputDecoration(
-                  labelText: 'Email Address',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
-              ),
-              const SizedBox(height: 15),
-
               // Full Name Field
-              const TextField(
-                decoration: InputDecoration(
+              TextField(
+                controller: _fullNameController,
+                decoration: const InputDecoration(
                   labelText: 'Full Name',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.person),
@@ -54,9 +193,23 @@ class SignUpPage extends StatelessWidget {
               ),
               const SizedBox(height: 15),
 
+              // Email Address Field
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email Address',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
+                ),
+              ),
+              const SizedBox(height: 15),
+
               // Mobile Number Field
-              const TextField(
-                decoration: InputDecoration(
+              TextField(
+                controller: _mobileNumberController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
                   labelText: 'Mobile Number',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.phone),
@@ -65,23 +218,49 @@ class SignUpPage extends StatelessWidget {
               const SizedBox(height: 15),
 
               // Password Field
-              const TextField(
-                obscureText: true,
+              TextField(
+                controller: _passwordController,
+                obscureText: !_isPasswordVisible,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 15),
 
               // Confirm Password Field
-              const TextField(
-                obscureText: true,
+              TextField(
+                controller: _confirmPasswordController,
+                obscureText: !_isConfirmPasswordVisible,
                 decoration: InputDecoration(
                   labelText: 'Confirm Password',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isConfirmPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                      });
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -89,13 +268,13 @@ class SignUpPage extends StatelessWidget {
               // Sign Up Button
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFDA1E1E),  // Red color
-                  minimumSize: const Size(double.infinity, 50),  // Full width
+                  backgroundColor: const Color(0xFFDA1E1E),
+                  minimumSize: const Size(double.infinity, 50),
                 ),
-                onPressed: () {
-                  // Implement sign-up logic here
-                },
-                child: const Text(
+                onPressed: _isLoading ? null : _signUp,
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
                   'Sign Up',
                   style: TextStyle(
                     fontSize: 18,
@@ -112,10 +291,10 @@ class SignUpPage extends StatelessWidget {
                   Expanded(child: Divider()),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Text('Or Sign Up With',
-                    style: TextStyle(
-                      fontFamily: 'Inter'
-                    ),),
+                    child: Text(
+                      'Or Sign Up With',
+                      style: TextStyle(fontFamily: 'Inter'),
+                    ),
                   ),
                   Expanded(child: Divider()),
                 ],
@@ -131,9 +310,7 @@ class SignUpPage extends StatelessWidget {
                     backgroundColor: Colors.grey[200],
                     child: IconButton(
                       icon: const FaIcon(FontAwesomeIcons.google, color: Colors.red),
-                      onPressed: () {
-                        // Implement Google login here
-                      },
+                      onPressed: _signUpWithGoogle,
                     ),
                   ),
                   const SizedBox(width: 20),
@@ -143,7 +320,7 @@ class SignUpPage extends StatelessWidget {
                     child: IconButton(
                       icon: const Icon(Icons.facebook, color: Colors.blue),
                       onPressed: () {
-                        // Implement Facebook login here
+                        // TODO: Implement Facebook login
                       },
                     ),
                   ),
@@ -154,7 +331,7 @@ class SignUpPage extends StatelessWidget {
                     child: IconButton(
                       icon: const Icon(Icons.apple, color: Colors.black),
                       onPressed: () {
-                        // Implement Apple login here
+                        // TODO: Implement Apple login
                       },
                     ),
                   ),
@@ -166,24 +343,21 @@ class SignUpPage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Already have an account?',
-                  style: TextStyle(
-                    fontFamily: 'Inter'
-                  ),),
+                  const Text(
+                    'Already have an account?',
+                    style: TextStyle(fontFamily: 'Inter'),
+                  ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pop(context); // Close the drawer
-                      Navigator.pushNamed(
-                        context,
-                        '/signin_page',
-                      );
+                      Navigator.pushReplacementNamed(context, '/signin_page');
                     },
                     child: const Text(
                       ' Sign In',
                       style: TextStyle(
-                          color: Color(0xFFDA1E1E),
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.bold),
+                        color: Color(0xFFDA1E1E),
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   )
                 ],
@@ -193,5 +367,15 @@ class SignUpPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _mobileNumberController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 }

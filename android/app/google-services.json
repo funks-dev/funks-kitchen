@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "772981263255",
+    "project_id": "funks-kitchen",
+    "storage_bucket": "funks-kitchen.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:772981263255:android:ca3b089d813dfab4da12d2",
+        "android_client_info": {
+          "package_name": "com.example.funks_kitchen_2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8bWSxZ2Uh8wmqnIH0GVLK-_LVvIoHrw4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
