@@ -19,6 +19,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late int _selectedIndex = 3;
   bool isLoading = true;
+  bool _mounted = true;
   String? fullName;
   String? email;
   String? mobileNumber;
@@ -26,22 +27,25 @@ class _ProfilePageState extends State<ProfilePage> {
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  @override
+  void dispose() {
+    _mounted = false;
+    super.dispose();
+  }
+
   Future<void> _fetchUserData() async {
-    setState(() => isLoading = true);
-
-    // Menambahkan delay buatan untuk menampilkan efek shimmer
-    await Future.delayed(const Duration(seconds: 2));
-
     try {
+      setState(() => isLoading = true);
+
       final User? user = _supabase.auth.currentUser;
       if (user != null) {
         final response = await _supabase
-            .from('users') // Assuming 'users' is your table in Supabase
+            .from('users')
             .select('full_name, email, mobile_number, profile_image')
             .eq('id', user.id)
             .single();
 
-        if (response != null) {
+        if (mounted && response != null) {  // Tambahkan pengecekan mounted
           setState(() {
             fullName = response['full_name'];
             email = user.email;
@@ -49,24 +53,26 @@ class _ProfilePageState extends State<ProfilePage> {
             _profileImageBase64 = response['profile_image'];
             isLoading = false;
           });
-        } else {
-          setState(() => isLoading = false);
         }
-      } else {
-        setState(() => isLoading = false);
       }
     } catch (e) {
       if (kDebugMode) {
         print("Error fetching user data: $e");
       }
-      setState(() => isLoading = false);
+    } finally {
+      if (mounted) {  // Pastikan widget masih mounted
+        setState(() => isLoading = false);
+      }
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _fetchUserData();
+    // Jalankan fetch setelah build selesai
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchUserData();
+    });
   }
 
   Future<void> _refreshProfile() async {
@@ -74,6 +80,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _onItemTapped(int index) {
+    if (!mounted) return;
     setState(() {
       _selectedIndex = index;
     });
@@ -272,8 +279,6 @@ class _ProfilePageState extends State<ProfilePage> {
             _buildProfileOption(Icons.location_on_outlined, 'Location'),
             _buildProfileOption(Icons.history, 'Activity'),
             _buildProfileOption(Icons.rate_review_outlined, 'Review'),
-            _buildProfileOption(Icons.shopping_cart_outlined, 'Cart'),
-            _buildProfileOption(Icons.favorite_border, 'Wishlist'),
             const Divider(),
             const SizedBox(height: 10),
             _buildProfileOption(Icons.report_gmailerrorred_outlined, 'Pesanan Dikomplain'),

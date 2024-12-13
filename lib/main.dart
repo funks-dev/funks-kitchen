@@ -1,3 +1,4 @@
+import 'package:Funks_Kitchen/pages/order_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -61,6 +62,7 @@ class MyApp extends StatelessWidget {
         '/signup_page': (context) => const SignUpPage(),
         '/profile_page': (context) => const ProfilePage(),
         '/edit_profile_page': (context) => const EditProfilePage(),
+        '/order_page': (context) => const OrderPage(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/menu_page') {

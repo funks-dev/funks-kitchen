@@ -1,17 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../pages/about_us_page.dart';
+import '../pages/home_page.dart';
+import '../pages/menu_page.dart';
+import '../pages/signin_page.dart';
 
 class Sidebar extends StatelessWidget {
   const Sidebar({super.key});
 
+  void _navigateToPage(BuildContext context, Widget page) {
+    if (page.runtimeType.toString() == ModalRoute.of(context)?.settings.name) {
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 200),
+        settings: RouteSettings(name: page.runtimeType.toString()),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final User? user = Supabase.instance.client.auth.currentUser;  // Check current user
+    final User? user = Supabase.instance.client.auth.currentUser;
 
     return Drawer(
       child: Column(
         children: [
-          // Main content of the Sidebar (Menu, etc.)
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
@@ -33,8 +57,8 @@ class Sidebar extends StatelessWidget {
                     ),
                   ),
                   onTap: () {
-                    Navigator.pop(context); // Close the drawer
-                    Navigator.pushNamed(context, '/home_page'); // Navigate to the Home page
+                    Navigator.pop(context);
+                    _navigateToPage(context, const HomePage());
                   },
                 ),
                 ExpansionTile(
@@ -53,12 +77,8 @@ class Sidebar extends StatelessWidget {
                       leading: const Icon(Icons.local_dining, color: Color(0xFFDA1E1E)),
                       title: const Text('Foods'),
                       onTap: () {
-                        Navigator.pop(context); // Close the drawer
-                        Navigator.pushNamed(
-                          context,
-                          '/menu_page',
-                          arguments: true, // Show food items
-                        );
+                        Navigator.pop(context);
+                        _navigateToPage(context, const MenuPage(initialIsFoodSelected: true));
                       },
                     ),
                     const Divider(),
@@ -66,12 +86,8 @@ class Sidebar extends StatelessWidget {
                       leading: const Icon(Icons.local_drink, color: Color(0xFFDA1E1E)),
                       title: const Text('Drinks'),
                       onTap: () {
-                        Navigator.pop(context); // Close the drawer
-                        Navigator.pushNamed(
-                          context,
-                          '/menu_page',
-                          arguments: false, // Show drink items
-                        );
+                        Navigator.pop(context);
+                        _navigateToPage(context, const MenuPage(initialIsFoodSelected: false));
                       },
                     ),
                   ],
@@ -87,46 +103,42 @@ class Sidebar extends StatelessWidget {
                     ),
                   ),
                   onTap: () {
-                    Navigator.pop(context); // Close the drawer
-                    Navigator.pushNamed(context, '/about_us_page'); // Navigate to About Us page
+                    Navigator.pop(context);
+                    _navigateToPage(context, const AboutUsPage());
                   },
                 ),
               ],
             ),
           ),
-          // Divider before the Sign In section
           const Divider(),
-          // Dynamic Sign In / Log Out section at the very bottom
           Padding(
-            padding: const EdgeInsets.all(16.0),  // Add padding around the text
+            padding: const EdgeInsets.all(16.0),
             child: GestureDetector(
               onTap: () async {
                 if (user == null) {
-                  Navigator.pop(context); // Close the drawer
-                  Navigator.pushNamed(context, '/signin_page'); // Navigate to Sign In page
+                  Navigator.pop(context);
+                  _navigateToPage(context, const SignInPage());
                 } else {
-                  await Supabase.instance.client.auth.signOut(); // Log out the user
-                  Navigator.pop(context); // Close the drawer
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/home_page',
-                        (route) => false, // Remove all previous routes
-                  );
+                  await Supabase.instance.client.auth.signOut();
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    _navigateToPage(context, const HomePage());
+                  }
                 }
               },
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,  // Align the row to the start (left)
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Icon(
-                    user == null ? Icons.login : Icons.logout,  // Change icon based on login status
-                    color: const Color(0xFFDA1E1E),  // Red icon
+                    user == null ? Icons.login : Icons.logout,
+                    color: const Color(0xFFDA1E1E),
                   ),
-                  const SizedBox(width: 10),  // Add space between the icon and the text
+                  const SizedBox(width: 10),
                   Text(
-                    user == null ? 'Sign In' : 'Log Out',  // Display either Sign In or Log Out based on user status
+                    user == null ? 'Sign In' : 'Log Out',
                     style: const TextStyle(
                       fontSize: 20,
-                      color: Colors.black,  // Black text
+                      color: Colors.black,
                       fontFamily: 'Inter',
                       fontWeight: FontWeight.w600,
                     ),

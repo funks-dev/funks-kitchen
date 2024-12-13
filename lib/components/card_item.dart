@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class CardItem extends StatelessWidget {
@@ -27,11 +28,39 @@ class CardItem extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(10),
                 ),
-                child: Image.asset(
+                child: Image.network(
                   imageUrl,
                   height: 108,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    if (kDebugMode) {
+                      print('Image load error: $error');
+                    } // Debug print
+                    return Container(
+                      height: 108,
+                      width: double.infinity,
+                      color: Colors.grey[300],
+                      child: const Center(
+                        child: Icon(Icons.image_not_supported, color: Colors.red),
+                      ),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 108,
+                      width: double.infinity,
+                      color: Colors.grey[200],
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -52,7 +81,7 @@ class CardItem extends StatelessWidget {
                 ),
               ),
             ),
-            const Spacer(), // Ensures date is aligned to the bottom of the title text
+            const Spacer(),
             Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Text(

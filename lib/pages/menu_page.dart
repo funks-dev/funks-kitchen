@@ -46,6 +46,7 @@ class _MenuPageState extends State<MenuPage> {
   List<MenuItem> foodItems = [];
   List<MenuItem> drinkItems = [];
   bool isLoading = true;
+  bool _mounted = true;
 
   final List<String> foodSubcategories = ['Noodle', 'Rice', 'Snacks', 'Western'];
   final List<String> drinkSubcategories = ['Coffee', 'Non-Coffee', 'Smoothies', 'Juice'];
@@ -58,7 +59,6 @@ class _MenuPageState extends State<MenuPage> {
         ? foodSubcategories.first
         : drinkSubcategories.first;
 
-    // Initialize section keys
     for (var category in foodSubcategories) {
       _sectionKeys[category] = GlobalKey();
     }
@@ -68,84 +68,85 @@ class _MenuPageState extends State<MenuPage> {
 
     _scrollController.addListener(_updateSelectedCategoryFromScroll);
 
-    // Fetch data when initialized
-    _fetchMenuItems();
+    // Gunakan addPostFrameCallback untuk memulai fetch data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_mounted) {
+        _fetchMenuItems();
+        _loadCartItems();
+      }
+    });
+  }
 
-    // Add this method to load existing cart items
-    _loadCartItems();
+  @override
+  void dispose() {
+    _mounted = false;
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchMenuItems() async {
+    if (!_mounted) return;
+
     try {
-      setState(() {
-        isLoading = true;
-      });
+      setState(() => isLoading = true);
 
-      // Menambahkan delay buatan untuk menampilkan efek shimmer
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Debug print untuk melihat koneksi Supabase
       if (kDebugMode) {
         print('Fetching data from Supabase...');
       }
 
-      // Fetch food items
       final foodResponse = await supabase
           .from('menu_items')
           .select()
           .eq('category', 'Food');
 
+      if (!_mounted) return;
+
       if (kDebugMode) {
         print('Food response: $foodResponse');
-      } // Debug print
+      }
 
-      // Fetch drink items
       final drinkResponse = await supabase
           .from('menu_items')
           .select()
           .eq('category', 'Drinks');
 
+      if (!_mounted) return;
+
       if (kDebugMode) {
         print('Drink response: $drinkResponse');
-      } // Debug print
+      }
 
       if (foodResponse == null || drinkResponse == null) {
         throw Exception('Null response from Supabase');
       }
 
-      setState(() {
-        foodItems = (foodResponse as List<dynamic>)
-            .map((item) => MenuItem.fromJson(item))
-            .toList();
-        drinkItems = (drinkResponse as List<dynamic>)
-            .map((item) => MenuItem.fromJson(item))
-            .toList();
-        isLoading = false;
-      });
-
+      if (_mounted) {
+        setState(() {
+          foodItems = (foodResponse as List<dynamic>)
+              .map((item) => MenuItem.fromJson(item))
+              .toList();
+          drinkItems = (drinkResponse as List<dynamic>)
+              .map((item) => MenuItem.fromJson(item))
+              .toList();
+          isLoading = false;
+        });
+      }
     } catch (error) {
       if (kDebugMode) {
         print('Error detail: $error');
-      } // Debug print untuk melihat detail error
-      setState(() {
-        isLoading = false;
-      });
+      }
 
-      // Show more detailed error message
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load menu items: ${error.toString()}'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      if (_mounted) {
+        setState(() => isLoading = false);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load menu items: ${error.toString()}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   void _updateSelectedCategoryFromScroll() {
@@ -283,7 +284,9 @@ class _MenuPageState extends State<MenuPage> {
 
     } catch (error) {
       // Handle any errors
-      print('Error adding to cart: $error');
+      if (kDebugMode) {
+        print('Error adding to cart: $error');
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to add item to cart: $error'),
@@ -334,7 +337,9 @@ class _MenuPageState extends State<MenuPage> {
       });
 
     } catch (error) {
-      print('Error updating cart item: $error');
+      if (kDebugMode) {
+        print('Error updating cart item: $error');
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update cart: $error'),
@@ -363,7 +368,9 @@ class _MenuPageState extends State<MenuPage> {
       });
 
     } catch (error) {
-      print('Error clearing cart: $error');
+      if (kDebugMode) {
+        print('Error clearing cart: $error');
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to clear cart: $error'),
@@ -374,17 +381,19 @@ class _MenuPageState extends State<MenuPage> {
   }
 
   Future<void> _loadCartItems() async {
+    if (!_mounted) return;
+
     try {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) return;
 
-      // Fetch cart items with joined menu item details
       final cartResponse = await supabase
           .from('cart_items')
           .select('*, menu_items(*)')
           .eq('user_id', userId);
 
-      // Convert the response to CartItem objects
+      if (!_mounted) return;
+
       final loadedCartItems = (cartResponse as List<dynamic>).map((cartItemData) {
         return CartItem(
           menuItem: MenuItem.fromJson(cartItemData['menu_items']),
@@ -392,26 +401,26 @@ class _MenuPageState extends State<MenuPage> {
         );
       }).toList();
 
-      // Update the state with loaded cart items
-      setState(() {
-        cartItems = loadedCartItems;
-        cartItemCount = cartItems.fold(0, (sum, item) => sum + item.quantity);
-        cartTotalPrice = cartItems.fold(0, (sum, item) => sum + (item.menuItem.price * item.quantity));
-
-        // Keep the cart collapsed by default, even if there are items
-        isCartExpanded = false;
-      });
-
+      if (_mounted) {
+        setState(() {
+          cartItems = loadedCartItems;
+          cartItemCount = cartItems.fold(0, (sum, item) => sum + item.quantity);
+          cartTotalPrice = cartItems.fold(0, (sum, item) => sum + (item.menuItem.price * item.quantity));
+          isCartExpanded = false;
+        });
+      }
     } catch (error) {
       if (kDebugMode) {
         print('Error loading cart items: $error');
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load cart items: $error'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      if (_mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load cart items: $error'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 

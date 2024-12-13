@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../components/header.dart';
 import '../components/card_item.dart';
 import '../components/footer.dart';
@@ -20,37 +23,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool _mounted = true;
   final PageController _pageController = PageController();
   int _currentPage = 0;
   int _selectedIndex = 0;
   bool isLoading = true;
   List<MenuItem> popularFoods = [];
   List<MenuItem> popularDrinks = [];
-
-  final List<Map<String, String>> newsItems = [
-    {
-      'imageUrl': 'assets/images/news1.png',
-      'title': 'Perayaan Grand Opening Funks Kitchen Resmi Dibuka!',
-      'date': '22 Oktober 2024',
-    },
-    {
-      'imageUrl': 'assets/images/news2.png',
-      'title': 'Memperkenalkan Menu Baru Kami Cita Rasa Funky!',
-      'date': '15 Oktober 2024',
-    },
-    {
-      'imageUrl': 'assets/images/news3.png',
-      'title': 'Funks Kitchen Gathering Kini Tersedia',
-      'date': '1 Oktober 2024',
-    },
-    {
-      'imageUrl': 'assets/images/news4.png',
-      'title': 'Dapatkan Penawaran Funky Setiap Minggu',
-      'date': '8 Oktober 2024',
-    }
-  ];
+  List<Map<String, dynamic>> newsItems = [];
+  Timer? _autoSlideTimer;
 
   void _onItemTapped(int index) {
+    if (!_mounted) return;
     setState(() {
       _selectedIndex = index;
     });
@@ -59,40 +43,95 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _startAutoSlide();
-    _fetchPopularItems();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_mounted) {
+        _startAutoSlide();
+        _fetchPopularItems();
+        _fetchNewsItems();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _mounted = false;
+    _pageController.dispose();
+    _autoSlideTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoSlide() {
+    _autoSlideTimer?.cancel();
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_mounted && _pageController.hasClients) {
+        setState(() {
+          _currentPage = (_currentPage + 1) % 3;
+        });
+        _pageController.animateToPage(
+          _currentPage,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _fetchNewsItems() async {
+    if (!_mounted) return;
+
+    try {
+      setState(() => isLoading = true);
+
+      final response = await supabase
+          .from('news_items')
+          .select()
+          .order('created_at', ascending: false)  // Get newest first
+          .limit(4);  // Only get 4 items
+
+      if (!_mounted) return;
+
+      setState(() {
+        newsItems = List<Map<String, dynamic>>.from(response);
+        isLoading = false;
+      });
+
+    } catch (error) {
+      if (kDebugMode) {
+        print('Error fetching news items: $error');
+      }
+      if (_mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load news: ${error.toString()}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _fetchPopularItems() async {
+    if (!_mounted) return;
+
     try {
-      setState(() {
-        isLoading = true;
-      });
+      setState(() => isLoading = true);
 
-      // Add artificial delay to show shimmer effect
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Fetch popular food items
       final foodResponse = await supabase
           .from('menu_items')
           .select()
           .eq('category', 'Food')
           .limit(5);
 
-      if (kDebugMode) {
-        print('Popular food response: $foodResponse');
-      }
+      if (!_mounted) return;
 
-      // Fetch popular drink items
       final drinkResponse = await supabase
           .from('menu_items')
           .select()
           .eq('category', 'Drinks')
           .limit(5);
 
-      if (kDebugMode) {
-        print('Popular drink response: $drinkResponse');
-      }
+      if (!_mounted) return;
 
       setState(() {
         popularFoods = (foodResponse as List<dynamic>)
@@ -108,34 +147,37 @@ class _HomePageState extends State<HomePage> {
       if (kDebugMode) {
         print('Error fetching popular items: $error');
       }
-      setState(() {
-        isLoading = false;
-      });
-
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load popular items: ${error.toString()}'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      if (_mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load popular items: ${error.toString()}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
-  void _startAutoSlide() {
-    Future.delayed(const Duration(seconds: 3), () {
-      if (_pageController.hasClients) {
-        setState(() {
-          _currentPage = (_currentPage + 1) % 3;
-        });
-        _pageController.animateToPage(
-          _currentPage,
-          duration: const Duration(milliseconds: 800),
-          curve: Curves.easeInOut,
-        );
-      }
-      _startAutoSlide();
-    });
+  void _navigateToPage(BuildContext context, Widget page) {
+    if (page.runtimeType.toString() == ModalRoute.of(context)?.settings.name) {
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 200),
+        settings: RouteSettings(name: page.runtimeType.toString()),
+      ),
+    );
   }
 
   Widget _buildShimmerItem() {
@@ -205,16 +247,10 @@ class _HomePageState extends State<HomePage> {
             itemCount: items.length,
             itemBuilder: (context, index) {
               return GestureDetector(
-                onTap: () {
-                  Navigator.push(
+                onTap: () => _navigateToPage(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => DetailPage(
-                        id: items[index].id.toString(),
-                      ),
-                    ),
-                  );
-                },
+                    DetailPage(id: items[index].id.toString())
+                ),
                 child: Container(
                   margin: EdgeInsets.only(
                     left: index == 0 ? 8 : 0,
@@ -278,12 +314,12 @@ class _HomePageState extends State<HomePage> {
               Positioned(
                 right: 0,
                 child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const NewsPage()),
-                    );
-                  },
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NewsPage(),
+                    ),
+                  ),
                   child: const Icon(Icons.arrow_forward),
                 ),
               ),
@@ -293,21 +329,82 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 10),
         SizedBox(
           height: 210,
-          child: ListView.builder(
+          child: isLoading
+              ? ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: 4,
+            itemBuilder: (context, index) => Padding(
+              padding: EdgeInsets.only(
+                left: index == 0 ? 8 : 0,
+                right: 8,
+              ),
+              child: Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: SizedBox(
+                  width: 180,
+                  height: 210,
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(10),
+                            ),
+                            child: Container(
+                              height: 108,
+                              width: double.infinity,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Container(
+                            width: 152,
+                            height: 10,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const Spacer(),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Container(
+                            width: 80,
+                            height: 9,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+              : ListView.builder(
             shrinkWrap: true,
             scrollDirection: Axis.horizontal,
             itemCount: newsItems.length,
             itemBuilder: (context, index) {
               final item = newsItems[index];
+              final createdAt = DateTime.parse(item['created_at']);
+              final formattedDate = DateFormat('dd MMMM yyyy').format(createdAt);
+
               return Container(
                 margin: EdgeInsets.only(
                   left: index == 0 ? 8 : 0,
                   right: 8,
                 ),
                 child: CardItem(
-                  imageUrl: item['imageUrl']!,
-                  title: item['title']!,
-                  date: item['date']!,
+                  imageUrl: item['image_url'],
+                  title: item['title'],
+                  date: formattedDate,
                 ),
               );
             },
@@ -323,7 +420,12 @@ class _HomePageState extends State<HomePage> {
       appBar: const Header(),
       drawer: const Sidebar(),
       body: RefreshIndicator(
-        onRefresh: _fetchPopularItems,
+        onRefresh: () async {
+          await Future.wait([
+            _fetchPopularItems(),
+            _fetchNewsItems(),
+          ]);
+        },
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -370,11 +472,5 @@ class _HomePageState extends State<HomePage> {
         isBackgroundVisible: true,
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
   }
 }
