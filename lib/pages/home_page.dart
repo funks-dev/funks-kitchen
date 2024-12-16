@@ -159,16 +159,41 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // WITH REPLACE
+  // void _navigateToPage(BuildContext context, Widget page) {
+  //   if (page.runtimeType.toString() == ModalRoute.of(context)?.settings.name) {
+  //     return;
+  //   }
+  //
+  //   Navigator.pushReplacement(
+  //     context,
+  //     PageRouteBuilder(
+  //       pageBuilder: (context, animation, secondaryAnimation) => page,
+  //       transitionsBuilder: (context, animation, secondaryAnimation, child) {
+  //         return FadeTransition(
+  //           opacity: animation,
+  //           child: child,
+  //         );
+  //       },
+  //       transitionDuration: const Duration(milliseconds: 200),
+  //       settings: RouteSettings(name: page.runtimeType.toString()),
+  //     ),
+  //   );
+  // }
+
+  // WITHOUT REPLACE
   void _navigateToPage(BuildContext context, Widget page) {
+    // Check if the current page is the same as the one being navigated to
     if (page.runtimeType.toString() == ModalRoute.of(context)?.settings.name) {
       return;
     }
 
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => page,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Use a FadeTransition for the page change animation
           return FadeTransition(
             opacity: animation,
             child: child,
