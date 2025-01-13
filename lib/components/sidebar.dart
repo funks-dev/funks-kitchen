@@ -103,8 +103,11 @@ class Sidebar extends StatelessWidget {
                     ),
                   ),
                   onTap: () {
-                    Navigator.pop(context);
-                    _navigateToPage(context, const AboutUsPage());
+                    Navigator.pop(context); // Tutup sidebar
+                    Navigator.push(  // Gunakan push alih-alih pushReplacement
+                      context,
+                      MaterialPageRoute(builder: (context) => const AboutUsPage()),
+                    );
                   },
                 ),
               ],
@@ -116,8 +119,11 @@ class Sidebar extends StatelessWidget {
             child: GestureDetector(
               onTap: () async {
                 if (user == null) {
-                  Navigator.pop(context);
-                  _navigateToPage(context, const SignInPage());
+                  Navigator.pop(context); // Tutup sidebar
+                  Navigator.push(  // Gunakan push alih-alih pushReplacement
+                    context,
+                    MaterialPageRoute(builder: (context) => const SignInPage()),
+                  );
                 } else {
                   await Supabase.instance.client.auth.signOut();
                   if (context.mounted) {
